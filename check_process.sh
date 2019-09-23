@@ -5,6 +5,7 @@ dir_array=(
 "/home/jordan/tests/libav/install/bin/angr-result-depth"
 "/home/jordan/tests/libav/install/bin/angr-result-depth"
 "/home/jordan/tests/FreeImage/Examples/Generic/angr-result-depth"
+"/home/jordan/tests/FreeImage/Examples/Generic/angr-result-depth"
 )
 
 script_array=(
