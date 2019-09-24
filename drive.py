@@ -3,8 +3,11 @@ import time
 import sys
 import os
 import angr
+import traceback
+import psutil
+from angr import options, procedures
 from angr.state_plugins.runtime_state import RuntimeStatePlugin
-from angr.exploration_techniques import RuntimeStateMonitor
+from angr.exploration_techniques import RuntimeStateMonitor,MemoryWatcher
 
 project_name = "djpeg_smse_state_with_depth"
 sys.setrecursionlimit(100000)
@@ -47,7 +50,7 @@ if __name__ == "__main__":
     RuntimeStatePlugin.prepare_runtime_state_tracking(s, switch_offset=0)
 
     simgr = p.factory.simgr(s)
-    simgr.use_technique(RuntimeStateMonitor(min_memory=5000))
+    simgr.use_technique(RuntimeStateMonitor(min_memory=60000))
     
     # simgr.run()
 
@@ -75,19 +78,19 @@ if __name__ == "__main__":
     # except (KeyboardInterrupt, RecursionError):
     #     pass
     except Exception as e:
-        print("unexpected exception")
+        print("unexcepted exception")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                              limit=20, file=open('traceback_' + project_name, 'a+'))
+        logger.warning("unexpected exception")
+        logger.exception(sys.exc_info())
         # import IPython; IPython.embed()
         print(e)
     finally:
         # p.kb.runtime_states.dbg_repr(open('runtime_states_' + project_name, 'a+'))
         # p.kb.runtime_states.dump_addr_annotation(open('addr_annotation_' + project_name, 'a+'))
-        for s in simgr.lowmem:
-                for bbl in s.history.bbl_addrs:
-                    if bbl in block_depth:
-                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.runtime_state_depth) 
-                    else :
-                        block_depth[bbl] = s.runtime_state.runtime_state_depth
-                covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
+        for bbl, depth in block_depth.items():
+            print("block:0x%x, depth:%d" % (bbl, depth), file=open('depth_' + project_name, 'a+'))
         print(len(covered_blocks), file=open('block_coverage_' + project_name, 'a+'))
         list_covered_blocks = list(covered_blocks)
         hex_unsorted_blocks = [hex(x) for x in list_covered_blocks]
@@ -96,7 +99,6 @@ if __name__ == "__main__":
         hex_covered_blocks = [hex(x) for x in list_covered_blocks]
         print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
         print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
-        # print block depth
-        for bbl, depth in block_depth.items():
-            print("block:0x%x, depth:%d" % (bbl, depth), file=open('depth_' + project_name, 'a+'))
+        print(psutil.Process(os.getpid()).memory_info().vms)
+        logger.warning("memory used: %d" % psutil.Process(os.getpid()).memory_info().vms)
         # import IPython; IPython.embed()
