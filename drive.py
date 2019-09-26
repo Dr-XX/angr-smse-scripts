@@ -50,7 +50,7 @@ if __name__ == "__main__":
     RuntimeStatePlugin.prepare_runtime_state_tracking(s, switch_offset=0)
 
     simgr = p.factory.simgr(s)
-    simgr.use_technique(RuntimeStateMonitor(min_memory=60000))
+    simgr.use_technique(RuntimeStateMonitor(min_memory=5000))
     
     # simgr.run()
 
