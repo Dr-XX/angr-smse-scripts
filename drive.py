@@ -9,6 +9,17 @@ from angr import options, procedures
 from angr.state_plugins.runtime_state import RuntimeStatePlugin
 from angr.exploration_techniques import RuntimeStateMonitor,MemoryWatcher
 
+class HookLog(angr.SimProcedure):
+
+    def run(self, avcl, level, fmt):
+        return
+
+class HookReturnTrue(angr.SimProcedure):
+
+    def run(self):
+        return 1
+
+
 project_name = "djpeg_smse_state_with_depth"
 sys.setrecursionlimit(100000)
 
@@ -40,6 +51,18 @@ if __name__ == "__main__":
     }
 
     p = angr.Project(target_file, load_options=load_options)
+    pre_hooks = {
+        'term_init': HookReturnTrue(),
+        'signal': HookReturnTrue(),
+        'av_log': HookLog(),
+        'parse_loglevel': HookReturnTrue(),
+        'fcntl': HookReturnTrue(),
+    }
+    for func, hook in pre_hooks.items():
+        symbol = p.loader.find_symbol(func)
+        if symbol is None:
+            continue
+        p.hook(symbol.rebased_addr, hook, replace=True)
 
     s = p.factory.entry_state(concrete_fs=True,
 			      cwd=os.getcwd(),
@@ -50,7 +73,7 @@ if __name__ == "__main__":
     RuntimeStatePlugin.prepare_runtime_state_tracking(s, switch_offset=0)
 
     simgr = p.factory.simgr(s)
-    simgr.use_technique(RuntimeStateMonitor(min_memory=5000))
+    simgr.use_technique(RuntimeStateMonitor(min_memory=8000))
     
     # simgr.run()
 
@@ -87,7 +110,6 @@ if __name__ == "__main__":
         # import IPython; IPython.embed()
         print(e)
     finally:
-        # p.kb.runtime_states.dbg_repr(open('runtime_states_' + project_name, 'a+'))
         # p.kb.runtime_states.dump_addr_annotation(open('addr_annotation_' + project_name, 'a+'))
         for bbl, depth in block_depth.items():
             print("block:0x%x, depth:%d" % (bbl, depth), file=open('depth_' + project_name, 'a+'))
@@ -100,5 +122,11 @@ if __name__ == "__main__":
         print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
         print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
         print(psutil.Process(os.getpid()).memory_info().vms)
-        logger.warning("memory used: %d" % psutil.Process(os.getpid()).memory_info().vms)
+        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms)/1024/1024)
+        logger.warning("%s" % simgr)
         # import IPython; IPython.embed()
+        print (p.kb.runtime_states.reached_runtime_states.__repr__(), file=open('dbg_repr_' + project_name, 'a+'))
+        if len(simgr.errored) >0 :
+            for s in simgr.errored:
+                print(s, file=open('errored_' + project_name, 'a+'))
+                traceback.print_exception(0,0,s.traceback,limit=20,file=open('errored_' + project_name, 'a+'))

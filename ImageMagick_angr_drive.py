@@ -8,7 +8,12 @@ import psutil
 from angr import options, procedures
 from angr.state_plugins.runtime_state import RuntimeStatePlugin
 from angr.exploration_techniques import RuntimeStateMonitor,MemoryWatcher
-project_name = "djpeg_angr_state_with_depth"
+project_name = "magick_angr_state_with_depth"
+
+class HookConfigureFileToStringInfo(angr.SimProcedure):
+    def run(self, filename):
+        return 0
+
 
 class HookLog(angr.SimProcedure):
 
@@ -34,7 +39,7 @@ logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
 project_name = project_name + time.strftime('%Y%m%d%H%M%S')
-target_file = "/home/jordan/tests/jpeg-9c/install/bin/djpeg"
+target_file = "/home/jordan/tests/ImageMagick/install/bin/magick"
 
 def prepare_runtime_state_tracking(state, switch_offset=-1):
     '''
@@ -77,7 +82,7 @@ if __name__ == "__main__":
         'auto_load_libs': True,
         'except_missing_libs': True,
         'ld_path': [
-	    "/home/jordan/tests/jpeg-9c/install/lib/",
+            "/home/jordan/tests/ImageMagick/install/lib/",
             "/lib/x86_64-linux-gnu/",
             "/lib64"
         ]
@@ -90,6 +95,7 @@ if __name__ == "__main__":
         'av_log': HookLog(),
         'parse_loglevel': HookReturnTrue(),
         'fcntl': HookReturnTrue(),
+        'ConfigureFileToStringInfo': HookConfigureFileToStringInfo(),
     }
     for func, hook in pre_hooks.items():
         symbol = p.loader.find_symbol(func)
@@ -101,7 +107,9 @@ if __name__ == "__main__":
 			      cwd=os.getcwd(),
                               args=[
                                   target_file,
-				  '/home/jordan/tests/resource/testimg.jpg',
+                                  'identify',
+                                  '-verbose',
+                                  '/home/jordan/tests/resource/pngtest.png',
                               ],)
     prepare_runtime_state_tracking(s, switch_offset=0)
 
@@ -120,7 +128,8 @@ if __name__ == "__main__":
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
             for s in simgr.deadended:
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
-            
+            # if len(simgr.errored) > 0 :
+            #     import IPython; IPython.embed()
     # except (KeyboardInterrupt, RecursionError):
     #     pass
     except Exception as e:
@@ -143,8 +152,7 @@ if __name__ == "__main__":
         print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
         print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
         print(psutil.Process(os.getpid()).memory_info().vms)
-        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms)/1024/1024)
-        logger.warning("%s" % simgr)
+        logger.warning("memory used: %d" % psutil.Process(os.getpid()).memory_info().vms)
         # import IPython; IPython.embed()
         if len(simgr.errored) >0 :
             for s in simgr.errored:
