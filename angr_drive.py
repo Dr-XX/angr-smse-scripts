@@ -8,7 +8,6 @@ import psutil
 from angr import options, procedures
 from angr.state_plugins.runtime_state import RuntimeStatePlugin
 from angr.exploration_techniques import RuntimeStateMonitor,MemoryWatcher
-project_name = "djpeg_angr_state_with_depth"
 
 class HookLog(angr.SimProcedure):
 
@@ -21,6 +20,7 @@ class HookReturnTrue(angr.SimProcedure):
         return 1
 
 
+project_name = "djpeg_smse_state_with_depth"
 sys.setrecursionlimit(100000)
 
 file_handler = logging.FileHandler(
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
         print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
         print(psutil.Process(os.getpid()).memory_info().vms)
-        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms)/1024/1024)
+        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms/1024/1024))
         logger.warning("%s" % simgr)
         # import IPython; IPython.embed()
         if len(simgr.errored) >0 :

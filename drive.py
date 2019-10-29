@@ -85,17 +85,17 @@ if __name__ == "__main__":
             for s in simgr.active:
                 for bbl in s.history.bbl_addrs:
                     if bbl in block_depth:
-                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.runtime_state_depth) 
+                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.rs_depth) 
                     else :
-                        block_depth[bbl] = s.runtime_state.runtime_state_depth
+                        block_depth[bbl] = s.runtime_state.rs_depth
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
                 
             for s in simgr.deadended:
                 for bbl in s.history.bbl_addrs:
                     if bbl in block_depth:
-                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.runtime_state_depth) 
+                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.rs_depth) 
                     else :
-                        block_depth[bbl] = s.runtime_state.runtime_state_depth
+                        block_depth[bbl] = s.runtime_state.rs_depth
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
             
     # except (KeyboardInterrupt, RecursionError):
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
         print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
         print(psutil.Process(os.getpid()).memory_info().vms)
-        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms)/1024/1024)
+        logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms/1024/1024))
         logger.warning("%s" % simgr)
         # import IPython; IPython.embed()
         print (p.kb.runtime_states.reached_runtime_states.__repr__(), file=open('dbg_repr_' + project_name, 'a+'))
