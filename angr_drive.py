@@ -20,7 +20,7 @@ class HookReturnTrue(angr.SimProcedure):
         return 1
 
 
-project_name = "djpeg_smse_state_with_depth"
+project_name = "djpeg_angr"
 sys.setrecursionlimit(100000)
 
 file_handler = logging.FileHandler(
@@ -34,51 +34,18 @@ logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
 project_name = project_name + time.strftime('%Y%m%d%H%M%S')
-target_file = "/home/jordan/tests/jpeg-9c/install/bin/djpeg"
 
-def prepare_runtime_state_tracking(state, switch_offset=-1):
-    '''
-    if state.has_plugin(plugin_name):
-        runtime_state_plugin = state.get_plugin(plugin_name)
-    else:
-        runtime_state_plugin = RuntimeStatePlugin()
-    state.register_plugin(plugin_name, runtime_state_plugin)
-    '''
-    
-    # relax some limitations
-    state.libc.max_str_len = 1000000
-    state.libc.max_buffer_size = 0x100000
-    state.libc.max_memcpy_size = 0x100000
+target_file = "/home/jordan/tests/jpeg-9c/O0-g-install/bin/djpeg"
 
-    # setup data source taint
-    hooks = {
-            'fgetc': procedures.libc.fgetc.fgetc(symbolic_wrap=True, switch_offset=switch_offset),
-            'fgets': procedures.libc.fgets.fgets(symbolic_wrap=True, switch_offset=switch_offset),
-            'fread': procedures.libc.fread.fread(symbolic_wrap=True, switch_offset=switch_offset),
-            'read': procedures.posix.read.read(symbolic_wrap=True, switch_offset=switch_offset),
-            'recv': procedures.posix.recv.recv(symbolic_wrap=True, switch_offset=switch_offset),
-            'recvfrom': procedures.posix.recvfrom.recvfrom(symbolic_wrap=True, switch_offset=switch_offset),
-    }
 
-    for func, hook in hooks.items():
-        symbol = state.project.loader.find_symbol(func)
-        if symbol is None:
-            l.warning("Fail to find symbol for %s", func)
-            continue
-        state.project.hook(symbol.rebased_addr, hook, replace=True)
-
-    if switch_offset < 0:
-        logger.info("hook POSIX APIs, just add symbolic wrapper")
-    else:
-        logger.info("hook POSIX APIs with symbolic switch offset %d", switch_offset)
 
 if __name__ == "__main__":
     load_options = {
         'auto_load_libs': True,
         'except_missing_libs': True,
         'ld_path': [
-	    "/home/jordan/tests/jpeg-9c/install/lib/",
-            "/lib/x86_64-linux-gnu/",
+            "/home/jordan/tests/jpeg-9c/O0-g-install/lib",
+            "/lib/x86_64-linux-gnu",
             "/lib64"
         ]
     }
@@ -103,22 +70,34 @@ if __name__ == "__main__":
                                   target_file,
 				  '/home/jordan/tests/resource/testimg.jpg',
                               ],)
-    prepare_runtime_state_tracking(s, switch_offset=0)
+    RuntimeStatePlugin.prepare_runtime_state_tracking(s, switch_offset=0)
 
     simgr = p.factory.simgr(s)
     # simgr.use_technique(RuntimeStateMonitor())
-    memory_watcher = angr.exploration_techniques.MemoryWatcher(min_memory=8000)
+    memory_watcher = angr.exploration_techniques.MemoryWatcher(min_memory=4096)
     simgr.use_technique(memory_watcher)
     
     # simgr.run()
 
     covered_blocks = set()
+    block_depth = dict()
     try:
         while len(simgr.active) > 0:
             simgr.step()
             for s in simgr.active:
+                for bbl in s.history.bbl_addrs:
+                    if bbl in block_depth:
+                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.rs_depth) 
+                    else :
+                        block_depth[bbl] = s.runtime_state.rs_depth
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
+                
             for s in simgr.deadended:
+                for bbl in s.history.bbl_addrs:
+                    if bbl in block_depth:
+                        block_depth[bbl] = min(block_depth[bbl], s.runtime_state.rs_depth) 
+                    else :
+                        block_depth[bbl] = s.runtime_state.rs_depth
                 covered_blocks = covered_blocks.union(set(s.history.bbl_addrs))
             
     # except (KeyboardInterrupt, RecursionError):
@@ -134,6 +113,8 @@ if __name__ == "__main__":
         print(e)
     finally:
         # p.kb.runtime_states.dump_addr_annotation(open('addr_annotation_' + project_name, 'a+'))
+        for bbl, depth in block_depth.items():
+            print("block:0x%x, depth:%d" % (bbl, depth), file=open('depth_' + project_name, 'a+'))
         print(len(covered_blocks), file=open('block_coverage_' + project_name, 'a+'))
         list_covered_blocks = list(covered_blocks)
         hex_unsorted_blocks = [hex(x) for x in list_covered_blocks]
@@ -146,6 +127,7 @@ if __name__ == "__main__":
         logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms/1024/1024))
         logger.warning("%s" % simgr)
         # import IPython; IPython.embed()
+        print (p.kb.runtime_states.reached_runtime_states.__repr__(), file=open('dbg_repr_' + project_name, 'a+'))
         if len(simgr.errored) >0 :
             for s in simgr.errored:
                 print(s, file=open('errored_' + project_name, 'a+'))

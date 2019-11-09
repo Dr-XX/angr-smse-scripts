@@ -1,0 +1,38 @@
+CC=c99 CFLAGS="-g -O0 -Wall -W" CXXFLAGS="-O0 -g"  \
+../configure --prefix=`pwd`/../install \
+--enable-shared=yes \
+--enable-static=yes \
+--with-modules=yes \
+--disable-deprecated \
+--with-gnu-ld=no \
+--with-quantum-depth=16 \
+--enable-hdri=no \
+--with-bzlib=no \
+--with-autotrace=yes \
+--with-djvu=no \
+--with-dps=no \
+--with-fpx=no \
+--with-fontconfig=yes \
+--with-freetype=yes \
+--with-gslib=no \
+--with-gvc=yes \
+--with-jbig=no \
+--with-jpeg=yes \
+--with-jp2=yes \
+--with-lcms=yes \
+--with-lcms2=yes \
+--with-lqr=no \
+--with-magick-plus-plus=yes \
+--with-openexr=yes \
+--with-perl=no \
+--with-png=yes \
+--with-rsvg=yes \
+--with-tiff=yes \
+--with-wmf=yes \
+--with-x=no \
+--with-xml=yes \
+--with-zlib=no \
+--with-lzma=no \
+--without-threads \
+
+

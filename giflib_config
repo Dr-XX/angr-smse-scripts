@@ -1,0 +1,2 @@
+#modify Makefile's PREFIX
+make install
