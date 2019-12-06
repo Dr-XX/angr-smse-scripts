@@ -119,10 +119,6 @@ if __name__ == "__main__":
         list_covered_blocks = list(covered_blocks)
         hex_unsorted_blocks = [hex(x) for x in list_covered_blocks]
         print(hex_unsorted_blocks, file=open('block_coverage_' + project_name, 'a+'))
-        list_covered_blocks.sort()
-        hex_covered_blocks = [hex(x) for x in list_covered_blocks]
-        print("sorted:", file=open('block_coverage_' + project_name, 'a+'))
-        print(hex_covered_blocks, file=open('block_coverage_' + project_name, 'a+'))
         print(psutil.Process(os.getpid()).memory_info().vms)
         logger.warning("memory used: %d" % (psutil.Process(os.getpid()).memory_info().vms/1024/1024))
         logger.warning("%s" % simgr)
@@ -130,5 +126,6 @@ if __name__ == "__main__":
         print (p.kb.runtime_states.reached_runtime_states.__repr__(), file=open('dbg_repr_' + project_name, 'a+'))
         if len(simgr.errored) >0 :
             for s in simgr.errored:
-                print(s, file=open('errored_' + project_name, 'a+'))
+                print(s.error, file=open('errored_' + project_name, 'a+'))
+                print(s.state, file=open('errored_' + project_name, 'a+'))
                 traceback.print_exception(0,0,s.traceback,limit=20,file=open('errored_' + project_name, 'a+'))
