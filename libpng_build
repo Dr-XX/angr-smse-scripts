@@ -1,0 +1,4 @@
+./configure --prefix=XXX
+make install
+cd tests/libpng-1.6.36/
+gcc -I/home/jordan/tests/libpng-1.6.36/install/include pngpixel.c -L/home/jordan/tests/libpng-1.6.36/install/lib -lpng16 -o pngpixel
