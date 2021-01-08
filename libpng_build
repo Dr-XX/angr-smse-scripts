@@ -2,3 +2,8 @@
 make install
 cd tests/libpng-1.6.36/
 gcc -I/home/jordan/tests/libpng-1.6.36/install/include pngpixel.c -L/home/jordan/tests/libpng-1.6.36/install/lib -lpng16 -o pngpixel
+
+#clang to compile a non-dynamic executable
+gclang -c pngpixel.c
+gclang -o pngpixel -L../../.libs pngpixel.o -static -lpng16 -lz -lm
+get-bc pngpixel
