@@ -1,6 +1,0 @@
-#!/bin/sh
-# first, modify Makefile.gnu
-# DESTDIR,INCDIR, INSTALLDIR
-# CFLAGS, CXXFLAGS (-O0)
-make
-make install

@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# comment out Find OpenSSL and Find Crypto in CmakeList.txt 
-cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="/home/jordan/tests/podofo-0.9.5/O0-g-install" .. -DPODOFO_HAVE_OPENSSL:BOOL=FALSE -DCMAKE_CXX_FLAGS="-O0 -g" -DCMAKE_C_FLAGS="-O0 -g"
